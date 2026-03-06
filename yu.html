@@ -1,0 +1,570 @@
+<meta name='viewport' content='width=device-width, initial-scale=1'/><!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>বাংলা ভাষার বংশলতিকা (ট্রি ডায়াগ্রাম)</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tiro+Bangla:ital@0;1&family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'bangla': ['Hind Siliguri', 'sans-serif'],
+                        'bangla-serif': ['Tiro Bangla', 'serif'],
+                    },
+                    colors: {
+                        brand: {
+                            dark: '#0f172a',
+                            card: '#1e293b',
+                            gold: '#f59e0b',
+                            goldLight: '#fcd34d'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Hind Siliguri', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            overflow: hidden; /* We will scroll the inner container */
+        }
+
+        /* --- CSS Tree Diagram Styles --- */
+        .tree-container {
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            padding: 2rem;
+            cursor: grab;
+            display: flex;
+            justify-content: center; /* Center horizontally if space permits */
+            align-items: flex-start;
+        }
+        
+        .tree-container:active {
+            cursor: grabbing;
+        }
+
+        /* Hide scrollbar for cleaner look, but keep functionality */
+        .tree-container::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        .tree-container::-webkit-scrollbar-track {
+            background: #0f172a; 
+        }
+        .tree-container::-webkit-scrollbar-thumb {
+            background: #334155; 
+            border-radius: 4px;
+        }
+
+        .tree {
+            display: inline-block;
+            min-width: max-content; /* Critical for horizontal scrolling */
+            transform-origin: top center;
+            transition: transform 0.2s ease;
+        }
+
+        .tree ul {
+            padding-top: 30px; 
+            position: relative;
+            display: flex;
+            justify-content: center;
+        }
+
+        .tree li {
+            float: left; 
+            text-align: center;
+            list-style-type: none;
+            position: relative;
+            padding: 30px 10px 0 10px;
+        }
+
+        /* Connecting lines */
+        .tree li::before, .tree li::after {
+            content: '';
+            position: absolute; 
+            top: 0; 
+            right: 50%;
+            border-top: 2px solid #475569; /* Slate 600 */
+            width: 50%; 
+            height: 30px;
+        }
+        .tree li::after {
+            right: auto; 
+            left: 50%;
+            border-left: 2px solid #475569;
+        }
+
+        /* Remove lines for single children or edges */
+        .tree li:only-child::after, .tree li:only-child::before {
+            display: none;
+        }
+        .tree li:only-child { 
+            padding-top: 0;
+        }
+        .tree li:first-child::before, .tree li:last-child::after {
+            border: 0 none;
+        }
+
+        /* Downward line from parent */
+        .tree ul::before {
+            content: '';
+            position: absolute; 
+            top: 0; 
+            left: 50%;
+            border-left: 2px solid #475569;
+            width: 0; 
+            height: 30px;
+            transform: translateX(-50%);
+        }
+
+        /* Corner radius for lines */
+        .tree li:first-child::after { border-radius: 8px 0 0 0; }
+        .tree li:last-child::before { border-radius: 0 8px 0 0; }
+
+        /* --- Node Styles --- */
+        .node-card {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 20px;
+            background-color: #1e293b;
+            border: 2px solid #334155;
+            border-radius: 12px;
+            min-width: 120px;
+            text-decoration: none;
+            color: #e2e8f0;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .node-card:hover {
+            background-color: #334155;
+            border-color: #94a3b8;
+            transform: translateY(-3px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+        }
+
+        .node-time {
+            font-size: 11px;
+            color: #94a3b8;
+            margin-top: 4px;
+            border-top: 1px solid #334155;
+            padding-top: 4px;
+            width: 100%;
+        }
+
+        /* --- Main Path Highlighting --- */
+        .path-main > .node-card {
+            border-color: #f59e0b;
+            background-color: rgba(245, 158, 11, 0.1);
+            color: #fcd34d;
+            font-weight: 600;
+        }
+        .path-main > .node-card:hover {
+            background-color: rgba(245, 158, 11, 0.2);
+            border-color: #fbbf24;
+        }
+        
+        /* Highlight the lines for the main path */
+        .path-main::before, .path-main::after,
+        .path-main > ul::before {
+            border-color: #f59e0b !important;
+            z-index: 1;
+        }
+        /* Fix line inheritance issue for gold path */
+        .tree li.path-main:first-child::after,
+        .tree li.path-main:last-child::before,
+        .tree li.path-main > ul::before {
+             border-color: #f59e0b !important;
+        }
+
+        /* --- Target Node (Bangla) --- */
+        .node-target {
+            background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+            color: #000 !important;
+            font-weight: bold !important;
+            border: none !important;
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.5) !important;
+            transform: scale(1.1);
+            font-size: 18px !important;
+        }
+        .node-target:hover {
+            transform: scale(1.15) translateY(-3px);
+        }
+
+        /* --- Bottom Sheet Modal --- */
+        .bottom-sheet {
+            position: fixed;
+            bottom: -100%;
+            left: 0;
+            width: 100%;
+            background-color: #1e293b;
+            border-top-left-radius: 24px;
+            border-top-right-radius: 24px;
+            box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
+            transition: bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 50;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .bottom-sheet.open {
+            bottom: 0;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(2px);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            z-index: 40;
+        }
+
+        .overlay.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* Drag Handle Indicator */
+        .drag-handle {
+            width: 50px;
+            height: 5px;
+            background-color: #475569;
+            border-radius: 10px;
+            margin: 12px auto;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Overlay -->
+    <div class="fixed top-0 left-0 w-full bg-gradient-to-b from-[#0f172a] to-transparent p-4 z-20 flex justify-between items-start pointer-events-none">
+        <div class="pointer-events-auto">
+            <h1 class="text-xl md:text-3xl font-bold text-brand-gold font-bangla-serif drop-shadow-lg">
+                <i class="fa-solid fa-sitemap mr-2"></i> ভাষার বংশলতিকা
+            </h1>
+            <p class="text-slate-300 text-xs md:text-sm mt-1 bg-slate-900/50 inline-block px-3 py-1 rounded-full backdrop-blur-sm">
+                <i class="fa-solid fa-arrows-up-down-left-right mr-1"></i> ডায়াগ্রামটি ডানে-বামে সরাতে স্ক্রিন টেনে ধরুন (Drag/Scroll)
+            </p>
+        </div>
+        
+        <!-- Zoom Controls -->
+        <div class="flex gap-2 pointer-events-auto bg-slate-800/80 p-1.5 rounded-lg backdrop-blur-sm border border-slate-700">
+            <button onclick="zoomIn()" class="w-8 h-8 flex items-center justify-center bg-slate-700 text-white rounded hover:bg-slate-600 active:bg-slate-500"><i class="fa-solid fa-plus"></i></button>
+            <button onclick="zoomOut()" class="w-8 h-8 flex items-center justify-center bg-slate-700 text-white rounded hover:bg-slate-600 active:bg-slate-500"><i class="fa-solid fa-minus"></i></button>
+            <button onclick="resetZoom()" class="w-8 h-8 flex items-center justify-center bg-slate-700 text-white rounded hover:bg-slate-600 active:bg-slate-500"><i class="fa-solid fa-expand"></i></button>
+        </div>
+    </div>
+
+    <!-- Tree Diagram Area -->
+    <main class="tree-container" id="tree-container">
+        <div class="tree" id="tree">
+            <ul>
+                <!-- Root Node -->
+                <li class="path-main">
+                    <div class="node-card" onclick="openDetails('indo_euro')">
+                        <span>ইন্দো-ইউরোপীয়</span>
+                        <span class="node-time">খ্রিস্টপূর্ব ৫০০০</span>
+                    </div>
+                    <ul>
+                        <!-- Branch 1: Centum -->
+                        <li>
+                            <div class="node-card" onclick="openDetails('centum')">
+                                <span>কেন্তুম</span>
+                            </div>
+                        </li>
+                        <!-- Branch 2: Satem (Main Path) -->
+                        <li class="path-main">
+                            <div class="node-card" onclick="openDetails('satem')">
+                                <span>শতম</span>
+                                <span class="node-time">খ্রিস্টপূর্ব ৩৫০০</span>
+                            </div>
+                            <ul>
+                                <li><div class="node-card" onclick="openDetails('albanian')"><span>আলবেনীয়</span></div></li>
+                                <li><div class="node-card" onclick="openDetails('armenian')"><span>আর্মেনীয়</span></div></li>
+                                <li><div class="node-card" onclick="openDetails('balto')"><span>বাল্টো স্লাভীয়</span></div></li>
+                                
+                                <li class="path-main">
+                                    <div class="node-card" onclick="openDetails('indo_iranian')">
+                                        <span>ইন্দো-ইরানীয়</span>
+                                        <span class="node-time">খ্রিস্টপূর্ব ২৫০০</span>
+                                    </div>
+                                    <ul>
+                                        <li><div class="node-card" onclick="openDetails('iranian')"><span>ইরানীয়</span></div></li>
+                                        <li><div class="node-card" onclick="openDetails('dardic')"><span>দার্দীয়</span></div></li>
+                                        
+                                        <li class="path-main">
+                                            <div class="node-card" onclick="openDetails('indian')">
+                                                <span>ভারতীয়</span>
+                                                <span class="node-time">খ্রিস্টপূর্ব ১২০০</span>
+                                            </div>
+                                            <ul>
+                                                <li>
+                                                    <div class="node-card" onclick="openDetails('ancient_aryan')">
+                                                        <span>প্রাচীন ভারতীয় আর্য</span>
+                                                    </div>
+                                                    <ul>
+                                                        <li><div class="node-card" onclick="openDetails('ashoka')"><span>অশোকলিপি</span></div></li>
+                                                        <li><div class="node-card" onclick="openDetails('pali')"><span>পালি</span></div></li>
+                                                        <li><div class="node-card" onclick="openDetails('udichya')"><span>প্রাচীন উদীচ্য</span></div></li>
+                                                    </ul>
+                                                </li>
+                                                <li class="path-main">
+                                                    <div class="node-card" onclick="openDetails('vedic')">
+                                                        <span>বৈদিক (বেদের ভাষা)</span>
+                                                    </div>
+                                                    <ul>
+                                                        <li><div class="node-card" onclick="openDetails('shourseni')"><span>প্রাচীন শৌরসেনী</span></div></li>
+                                                        <li class="path-main">
+                                                            <div class="node-card" onclick="openDetails('prachya')">
+                                                                <span>প্রাচীন প্রাচ্য</span>
+                                                            </div>
+                                                            <ul>
+                                                                <li><div class="node-card" onclick="openDetails('sinhali')"><span>সিংহলী</span></div></li>
+                                                                <li><div class="node-card" onclick="openDetails('maharashtri')"><span>মহারাষ্ট্রী</span></div></li>
+                                                                <li><div class="node-card" onclick="openDetails('ardhamagadhi')"><span>অর্ধমাগধী</span></div></li>
+                                                                <li class="path-main">
+                                                                    <div class="node-card" onclick="openDetails('magadhi')">
+                                                                        <span>প্রাকৃত মাগধী অপভ্রংশ</span>
+                                                                    </div>
+                                                                    <ul>
+                                                                        <li class="path-main">
+                                                                            <div class="node-card" onclick="openDetails('goudi')">
+                                                                                <span>গৌড়ী প্রাকৃত</span>
+                                                                            </div>
+                                                                            <ul>
+                                                                                <li><div class="node-card" onclick="openDetails('bihari')"><span>বিহারী</span></div></li>
+                                                                                <li><div class="node-card" onclick="openDetails('odiya')"><span>উড়িয়া</span></div></li>
+                                                                                <li class="path-main">
+                                                                                    <div class="node-card" onclick="openDetails('banga_kamrupi')">
+                                                                                        <span>বঙ্গ-কামরূপী</span>
+                                                                                    </div>
+                                                                                    <ul>
+                                                                                        <li><div class="node-card" onclick="openDetails('assamese')"><span>অসমিয়া</span></div></li>
+                                                                                        <li class="path-main">
+                                                                                            <div class="node-card node-target" onclick="openDetails('bangla')">
+                                                                                                <span>বাংলা</span>
+                                                                                                <span class="node-time text-black/70 border-black/20">খ্রি. ৬৫০–১২০০</span>
+                                                                                            </div>
+                                                                                        </li>
+                                                                                    </ul>
+                                                                                </li>
+                                                                            </ul>
+                                                                        </li>
+                                                                    </ul>
+                                                                </li>
+                                                            </ul>
+                                                        </li>
+                                                    </ul>
+                                                </li>
+                                            </ul>
+                                        </li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </main>
+
+    <!-- Overlay & Bottom Sheet Modal -->
+    <div class="overlay" id="overlay" onclick="closeDetails()"></div>
+    
+    <div class="bottom-sheet md:max-w-2xl md:mx-auto md:left-0 md:right-0" id="bottom-sheet">
+        <div class="drag-handle"></div>
+        
+        <div class="px-6 pb-6 overflow-y-auto max-h-[70vh]">
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <span id="detail-type" class="inline-block px-2 py-1 text-[10px] font-bold rounded bg-slate-700 text-slate-300 mb-2 uppercase tracking-wider"></span>
+                    <h2 id="detail-title" class="text-2xl md:text-3xl font-bold text-white font-bangla-serif"></h2>
+                </div>
+                <button onclick="closeDetails()" class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <p id="detail-time" class="text-brand-gold text-sm font-semibold mb-4 flex items-center hidden"><i class="fa-regular fa-clock mr-1.5"></i> <span></span></p>
+            
+            <div class="w-full h-px bg-slate-700 mb-4"></div>
+            
+            <p id="detail-desc" class="text-slate-300 text-base md:text-lg leading-relaxed font-bangla mb-6"></p>
+            
+            <div id="detail-parent-box" class="bg-slate-800/50 p-3 rounded-lg border border-slate-700 inline-block hidden">
+                <p class="text-xs text-slate-400">উৎস:</p>
+                <p id="detail-parent" class="font-semibold text-white"></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data Base
+        const db = {
+            "indo_euro": { title: "ইন্দো-ইউরোপীয়", time: "খ্রিস্টপূর্ব ৫০০০", type: "আদি মূল ভাষা", parent: "", desc: "এটি পুরো ভাষা-গাছের 'ঠাকুরদা'। পৃথিবীর সবচেয়ে বড় ভাষা পরিবারের প্রাচীন মূল ভাষা। পণ্ডিতদের মতে এর কোনো লিখিত রূপ ছিল না। এর থেকেই ইংরেজি, হিন্দি, বাংলা, রাশিয়ান, ফার্সি ইত্যাদি ভাষার উৎপত্তি।" },
+            "centum": { title: "কেন্তুম", type: "পশ্চিমা শাখা", parent: "ইন্দো-ইউরোপীয়", desc: "ল্যাটিন শব্দ 'centum' (১০০) থেকে নামকরণ। এর থেকে ইংরেজি, জার্মান, ফ্রেঞ্চ, স্প্যানিশ ভাষার জন্ম। বাংলার সাথে এর সরাসরি সম্পর্ক নেই।" },
+            "satem": { title: "শতম", time: "খ্রিস্টপূর্ব ৩৫০০", type: "পূর্বা শাখা (মূল ধারা)", parent: "ইন্দো-ইউরোপীয়", desc: "সংস্কৃত শব্দ 'শতম' (১০০) থেকে নাম। এই শাখাটিই পরবর্তীতে এশিয়ার দিকে অগ্রসর হয় এবং আমাদের বাংলা ভাষা এই শাখা থেকেই এসেছে।" },
+            "albanian": { title: "আলবেনীয়", type: "শাখা ভাষা", parent: "শতম", desc: "আজকের ইউরোপের আলবেনিয়া দেশের প্রধান ভাষা।" },
+            "armenian": { title: "আর্মেনীয়", type: "শাখা ভাষা", parent: "শতম", desc: "আর্মেনিয়া দেশের ভাষা।" },
+            "balto": { title: "বাল্টো স্লাভীয়", type: "শাখা ভাষা", parent: "শতম", desc: "পূর্ব ইউরোপের ভাষাগুলোর মূল (রাশিয়ান, পোলিশ ইত্যাদি)।" },
+            "indo_iranian": { title: "ইন্দো-ইরানীয়", time: "খ্রিস্টপূর্ব ২৫০০", type: "মূল ধারা", parent: "শতম", desc: "এই পর্যায় থেকে ভারত ও ইরানের সব প্রধান ভাষার উৎপত্তি ঘটেছে।" },
+            "iranian": { title: "ইরানীয়", type: "শাখা ভাষা", parent: "ইন্দো-ইরানীয়", desc: "আধুনিক ফার্সি (ইরান), পশতু, এবং কুর্দি ভাষার মূল উৎস।" },
+            "dardic": { title: "দার্দীয়", type: "শাখা ভাষা", parent: "ইন্দো-ইরানীয়", desc: "কাশ্মীরি, শিনা (পাকিস্তান-কাশ্মীর অঞ্চলের ভাষা)।" },
+            "indian": { title: "ভারতীয়", time: "খ্রিস্টপূর্ব ১২০০", type: "মূল ধারা", parent: "ইন্দো-ইরানীয়", desc: "আমাদের সরাসরি পূর্বপুরুষ শাখা। এখান থেকে হিন্দি, বাংলা, মারাঠি, গুজরাটি, ওড়িয়া প্রভৃতি ভারতীয় ভাষার উদ্ভব।" },
+            "ancient_aryan": { title: "প্রাচীন ভারতীয় আর্য", type: "শাখা ভাষা", parent: "ভারতীয়", desc: "খুব প্রাচীন আর্য কথ্য ভাষা।" },
+            "ashoka": { title: "অশোকলিপি", type: "শাখা ভাষা", parent: "প্রাচীন ভারতীয় আর্য", desc: "সম্রাট অশোকের (খ্রিস্টপূর্ব ২৫০) শিলালিপির ভাষা।" },
+            "pali": { title: "পালি", type: "শাখা ভাষা", parent: "প্রাচীন ভারতীয় আর্য", desc: "বৌদ্ধ ধর্মগ্রন্থ (ত্রিপিটক) এই ভাষায় লেখা।" },
+            "udichya": { title: "প্রাচীন উদীচ্য", type: "শাখা ভাষা", parent: "প্রাচীন ভারতীয় আর্য", desc: "উত্তর ভারতের প্রাচীন কথ্য প্রাকৃত ভাষা।" },
+            "vedic": { title: "বৈদিক (বেদের ভাষা)", type: "মূল ধারা", parent: "ভারতীয়", desc: "বেদ, উপনিষদ লেখা হয়েছিল এই ভাষায়। এটি পণ্ডিতদের ভাষা ছিল। সাধারণ মানুষের ভাষা এর থেকে আলাদা হতে শুরু করে যাকে 'প্রাকৃত' বলা হয়।" },
+            "shourseni": { title: "প্রাচীন শৌরসেনী", type: "শাখা ভাষা", parent: "বৈদিক", desc: "মধ্য ভারতের প্রাকৃত ভাষা। সংস্কৃত নাটকে সাধারণ পাত্র-পাত্রীদের সংলাপে ব্যবহার হতো।" },
+            "prachya": { title: "প্রাচীন প্রাচ্য", type: "মূল ধারা", parent: "বৈদিক", desc: "পূর্ব ভারত (বর্তমান বাংলা, বিহার, ওড়িশা অঞ্চল) এর প্রাচীন কথ্য প্রাকৃত।" },
+            "sinhali": { title: "সিংহলী", type: "শাখা ভাষা", parent: "প্রাচীন প্রাচ্য", desc: "বর্তমান শ্রীলঙ্কার জাতীয় ভাষা।" },
+            "maharashtri": { title: "মহারাষ্ট্রী", type: "শাখা ভাষা", parent: "প্রাচীন প্রাচ্য", desc: "আধুনিক মারাঠি ভাষার পূর্বপুরুষ।" },
+            "ardhamagadhi": { title: "অর্ধমাগধী", type: "শাখা ভাষা", parent: "প্রাচীন প্রাচ্য", desc: "জৈন ধর্মগ্রন্থগুলো মূলত এই ভাষায় রচিত।" },
+            "magadhi": { title: "প্রাকৃত মাগধী অপভ্রংশ", type: "মূল ধারা", parent: "প্রাচীন প্রাচ্য", desc: "অপভ্রংশ মানে 'ভাঙা' বা পরিবর্তিত ভাষা। এটি থেকে বিহার ও উড়িষ্যার ভাষার জন্ম।" },
+            "goudi": { title: "গৌড়ী প্রাকৃত", type: "মূল ধারা", parent: "প্রাকৃত মাগধী অপভ্রংশ", desc: "গৌড় বলতে প্রাচীন বাংলা অঞ্চলকে বোঝাত। ড. মুহম্মদ শহীদুল্লাহর মতে একে বাংলা ভাষার 'দাদু' বলা যায়।" },
+            "bihari": { title: "বিহারী", type: "শাখা ভাষা", parent: "গৌড়ী প্রাকৃত", desc: "বর্তমান বিহারের ভাষা (মৈথিলি, ভোজপুরি)।" },
+            "odiya": { title: "উড়িয়া", type: "শাখা ভাষা", parent: "গৌড়ী প্রাকৃত", desc: "আজকের ওড়িশা রাজ্যের প্রধান ভাষা।" },
+            "banga_kamrupi": { title: "বঙ্গ-কামরূপী", type: "মূল ধারা", parent: "গৌড়ী প্রাকৃত", desc: "বাংলা এবং আসাম অঞ্চলের মানুষের সাধারণ কথ্য ভাষা (৬৫০–১২০০ খ্রি.)। এটিই বাংলা ও অসমিয়া ভাষার সরাসরি 'মা'।" },
+            "assamese": { title: "অসমিয়া", type: "শাখা ভাষা", parent: "বঙ্গ-কামরূপী", desc: "আসাম রাজ্যের প্রধান ভাষা।" },
+            "bangla": { title: "বাংলা", time: "খ্রি. ৬৫০–১২০০", type: "লক্ষ্য মাতৃভাষা", parent: "বঙ্গ-কামরূপী", desc: "আমাদের মাতৃভাষা। চর্যাপদ হলো এর আদি রূপের প্রমাণ। এরপর মধ্য বাংলা হয়ে এটি আজকের আধুনিক রূপ লাভ করেছে।" }
+        };
+
+        // --- Bottom Sheet Logic ---
+        const sheet = document.getElementById('bottom-sheet');
+        const overlay = document.getElementById('overlay');
+
+        function openDetails(id) {
+            const data = db[id];
+            if (!data) return;
+
+            document.getElementById('detail-title').innerText = data.title;
+            document.getElementById('detail-desc').innerText = data.desc;
+            
+            const typeEl = document.getElementById('detail-type');
+            typeEl.innerText = data.type;
+            if (data.type.includes('মূল') || data.type.includes('লক্ষ্য')) {
+                typeEl.className = 'inline-block px-2 py-1 text-[10px] font-bold rounded mb-2 uppercase tracking-wider bg-brand-gold/20 text-brand-gold border border-brand-gold/50';
+            } else {
+                typeEl.className = 'inline-block px-2 py-1 text-[10px] font-bold rounded mb-2 uppercase tracking-wider bg-slate-700 text-slate-300';
+            }
+
+            const timeEl = document.getElementById('detail-time');
+            if (data.time) {
+                timeEl.querySelector('span').innerText = data.time;
+                timeEl.classList.remove('hidden');
+            } else {
+                timeEl.classList.add('hidden');
+            }
+
+            const parentBox = document.getElementById('detail-parent-box');
+            if (data.parent) {
+                document.getElementById('detail-parent').innerText = data.parent;
+                parentBox.classList.remove('hidden');
+            } else {
+                parentBox.classList.add('hidden');
+            }
+
+            sheet.classList.add('open');
+            overlay.classList.add('open');
+        }
+
+        function closeDetails() {
+            sheet.classList.remove('open');
+            overlay.classList.remove('open');
+        }
+
+        // --- Pan and Zoom Logic for the Tree ---
+        const container = document.getElementById('tree-container');
+        const tree = document.getElementById('tree');
+        
+        let scale = 1;
+        let isPanning = false;
+        let startX, startY;
+        let scrollLeft, scrollTop;
+
+        // Mouse Drag to Pan
+        container.addEventListener('mousedown', (e) => {
+            isPanning = true;
+            startX = e.pageX - container.offsetLeft;
+            startY = e.pageY - container.offsetTop;
+            scrollLeft = container.scrollLeft;
+            scrollTop = container.scrollTop;
+        });
+
+        container.addEventListener('mouseleave', () => isPanning = false);
+        container.addEventListener('mouseup', () => isPanning = false);
+
+        container.addEventListener('mousemove', (e) => {
+            if (!isPanning) return;
+            e.preventDefault();
+            const x = e.pageX - container.offsetLeft;
+            const y = e.pageY - container.offsetTop;
+            const walkX = (x - startX) * 1.5;
+            const walkY = (y - startY) * 1.5;
+            container.scrollLeft = scrollLeft - walkX;
+            container.scrollTop = scrollTop - walkY;
+        });
+
+        // Zoom Functions
+        function applyZoom() {
+            tree.style.transform = `scale(${scale})`;
+        }
+
+        function zoomIn() {
+            if (scale < 1.5) { scale += 0.1; applyZoom(); }
+        }
+
+        function zoomOut() {
+            if (scale > 0.4) { scale -= 0.1; applyZoom(); }
+        }
+
+        function resetZoom() {
+            scale = window.innerWidth < 768 ? 0.6 : 0.8; // default zoom based on screen
+            applyZoom();
+            // Center horizontal scroll
+            setTimeout(() => {
+                container.scrollLeft = (tree.scrollWidth * scale - container.clientWidth) / 2;
+                container.scrollTop = 0;
+            }, 50);
+        }
+
+        // Initialize display
+        window.addEventListener('load', () => {
+            // Set initial scale smaller for mobile so more of the tree is visible
+            resetZoom();
+        });
+
+    </script>
+</body>
+</html>
